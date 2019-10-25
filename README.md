@@ -2,6 +2,8 @@
 
 ### 环境构建
 
+------
+
 1. 安装服务器
 
    ```bash
@@ -24,105 +26,108 @@
 
 ### What‘s RabbitMQ
 
- * ##### 生产者(Producer)：
+------
 
-   向消息堆发送消息
+#### 生产者(Producer)：
 
- * ##### 消息堆(Queue)：
+向消息堆发送消息。
 
-   储存消息（先进先出）
+#### 消息堆(Queue)：
 
-* ##### 消费者(Consumer)：
+储存消息（先进先出）。
 
-   从堆接收消息
+#### 消费者(Consumer)：
+
+从堆接收消息。
 
 ### Hello world
 
-* ##### 启动RabbitMQ
+------
 
-  Queue由rabbitmq的服务器来管理，因此需要在终端执行```rabbitmq-server```来启动rabbitmq服务器。
+#### 启动RabbitMQ
 
-* ##### 生产者
+Queue由rabbitmq的服务器来管理，因此需要在终端执行```rabbitmq-server```来启动rabbitmq服务器。
 
-  1. 连接到服务器
+#### 生产者
 
-     ```python
-     import pika
-     
-     #连接到在本地运行的rabbitmq服务器（localhost）
-     connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
-     channel = connection.channel()
-     ```
+1. 连接到服务器
 
-  2. 确保queue存在
+```python
+import pika
 
-     ```python
-     #确保queue存在（如果不存在则建立一个新的queue），如果向不存在的queue发送消息，rabbitmq会废弃该消息
-     channel.queue_declare(queue='hello')
-     ```
+#连接到在本地运行的rabbitmq服务器（localhost）
+connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+channel = connection.channel()
+```
 
-  3. 发送消息
+1. 确保queue存在
 
-     ```python
-     channel.basic_publish(exchange='', #默认交换机类型，交换机相关在之后会详细介绍
-                           routing_key='hello', #在默认交换机类型中，即为queue的名字
-                           body='Hello World!') #发送的消息内容
-     print(" [x] Sent 'Hello World!'")
-     ```
+```python
+#确保queue存在（如果不存在则建立一个新的queue），如果向不存在的queue发送消息，rabbitmq会废弃该消息
+channel.queue_declare(queue='hello')
+```
 
-  4. 结束连接
+1. 发送消息
 
-     ```python
-     connection.close()
-     ```
+```python
+channel.basic_publish(exchange='', #默认交换机类型，交换机相关在之后会详细介绍
+                      routing_key='hello', #在默认交换机类型中，即为queue的名字
+                      body='Hello World!') #发送的消息内容
+print(" [x] Sent 'Hello World!'")
+```
 
-* ##### 消费者
+1. 结束连接
 
-  1. 连接到服务器
+```python
+connection.close()
+```
 
-  ```python
-  import pika
-  
-  #连接到在本地运行的rabbitmq服务器（localhost）
-  connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
-  channel = connection.channel()
-  ```
+#### 消费者
 
-  
+1. 连接到服务器
 
-  2. 确保queue存在
+```python
+import pika
 
-  ```python
-  #确保queue存在（如果不存在则建立一个新的queue）
-  channel.queue_declare(queue='hello')
-  ```
+#连接到在本地运行的rabbitmq服务器（localhost）
+connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+channel = connection.channel()
+```
 
-  3. 定义callback
+2. 确保queue存在
 
-  ```python
-  #消费者在接收到消息时，执行callback函数，本程序的callback函数打印接收到的消息
-  def callback(ch, method, properties, body):
-      print(" [x] Received %r" % body)
-  ```
+```python
+#确保queue存在（如果不存在则建立一个新的queue）
+channel.queue_declare(queue='hello')
+```
 
-  4. 接收消息
+3. 定义callback
 
-  ```python
-  channel.basic_consume(queue='hello', #指定从hello queue里接收消息
-                        auto_ack=True, #默认为False，当设为True时，消费者从queue中接收到消息后，自动返回acknowledgment(ack)以告诉queue我接收到消息了，queue在接收到ack后即会从queue中删除该消息。
-                        on_message_callback=callback) #接收到消息后执行callback函数
-  ```
+```python
+#消费者在接收到消息时，执行callback函数，本程序的callback函数打印接收到的消息
+def callback(ch, method, properties, body):
+    print(" [x] Received %r" % body)
+```
 
-  5. 监听queue
+4. 接收消息
 
-  ```python
-  print(' [*] Waiting for messages. To exit press CTRL+C')
-  # 执行一个无限循环开始监听queue
-  channel.start_consuming()
-  ```
+```python
+channel.basic_consume(queue='hello', #指定从hello queue里接收消息
+                      auto_ack=True, #默认为False，当设为True时，消费者从queue中接收到消息后，自动返回acknowledgment(ack)以告诉queue我接收到消息了，queue在接收到ack后即会从queue中删除该消息。
+                      on_message_callback=callback) #接收到消息后执行callback函数
+```
 
+5. 监听queue
+
+```python
+print(' [*] Waiting for messages. To exit press CTRL+C')
+# 执行一个无限循环开始监听queue
+channel.start_consuming()
+```
 
 ### Work Queue
+
+------
 
 #### Situation
 
@@ -173,13 +178,15 @@ channel.basic_publish(exchange='',
                       ))
 ```
 
-### Publish/Subscribe
+### Publish/Subscribe (Broadcast)
+
+------
 
 ###  Situation
 
 同样是一个生产者复数个消费者的场景，但是现在我们需要所有消费者收到全部Message（类似广播）。本场景中我们会涉及到一个新的交换机类型（相较于前两个场景的默认交换机类型）。
 
-### 交换机
+#### 交换机
 
 一方面从生产者接收消息，另一方面把消息推送到Queue以供消费者接收。当我们需要广播消息时，生产者将不再直接把信息发布到Queue，与此相对的是只将信息发布到交换机。交换机根据其对接收到的消息的处理（发送到一个queue还是多个...）被分成了四种类型（direct，topic，headers和fanout），本场景使用fanout类型。
 
@@ -188,7 +195,7 @@ channel.exchange_declare(exchange='logs', #交换机的名字，可自由定义
                          exchange_type='fanout')
 ```
 
-### Temporary queues
+#### Temporary queues
 
 本场景中我们不再需要也不能接收指定名字的Queue，因此Queue的名字不再重要，所以我们只需建立一个临时的Queue，并且由服务器为我们随机生成一个Queue的名字。
 
@@ -196,7 +203,7 @@ channel.exchange_declare(exchange='logs', #交换机的名字，可自由定义
 result = channel.queue_declare(queue='', exclusive=True) #声明一个queue，由服务器命名。通过设置exlusive为True来使该queue为一个临时的queue。
 ```
 
-### Bindings
+#### Bindings
 
 让交换机发送消息给Queue的操作。
 
@@ -206,6 +213,10 @@ channel.queue_bind(exchange='logs',
 ```
 
 ### Routing
+
+------
+
+
 
 
 
